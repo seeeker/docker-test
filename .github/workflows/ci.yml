@@ -1,0 +1,39 @@
+name: CI
+
+# WHICH events trigger this workflow.
+on:
+  push:
+    branches: [main]      # changes landing on main
+  pull_request:           # changes proposed against any branch
+
+jobs:
+  # --- Job 1: run the test suite -------------------------------------------
+  test:
+    runs-on: ubuntu-latest          # a fresh, throwaway x86_64 VM
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4    # pulls this repo onto the runner
+
+      - name: Set up Python 3.11     # match the runtime in the Dockerfile
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime + dev dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Run the test suite
+        run: pytest -v
+
+  # --- Job 2: build the image (only if tests passed) -----------------------
+  build:
+    needs: test                      # gate: don't build a known-broken app
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      # Single-arch build here on purpose — just prove the Dockerfile builds.
+      # Stage 4 swaps this for a multi-arch buildx build that pushes to GHCR.
+      - name: Build the Docker image
+        run: docker build -t docker-test:ci .
