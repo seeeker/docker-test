@@ -1,0 +1,15 @@
+services:
+  api:
+    # How to build the image locally. In Stage 5 (deploy on the Pi) we'll point
+    # this at a pre-built image pulled from GHCR instead of building on the host.
+    build: .
+    # Name the resulting image so it's referenced consistently. This becomes the
+    # GHCR path (ghcr.io/seeeker/docker-test) once we publish in Stage 4.
+    image: docker-test:latest
+    # A stable container name so `docker logs xml-api` etc. are predictable.
+    container_name: xml-api
+    ports:
+      # host:container — map the Pi's port 8000 to gunicorn's 8000 in the container.
+      - "8000:8000"
+    # Supervision: restart on crash and on Pi reboot, but stay down if WE stop it.
+    restart: unless-stopped
